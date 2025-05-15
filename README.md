@@ -65,21 +65,47 @@ This section describes the proposed ideas, design choices, algorithms, training 
 
 The anomaly detection system follows these general steps:
 
-```mermaid
-graph TD
-    A[Raw Single-Day Data (.csv)] --> B(Initial EDA & Preprocessing);
-    B --> C(Data Augmentation: Create 1 Week Synthetic Data);
-    C --> D(Feature Engineering: Time-based features);
-    D --> E(Data Splitting: Train/Validation/Test Sets - Chronological);
-    E --> F_Forecasting[Forecasting Models Training (LSTM, TCN) on Normal Data];
-    E --> F_AD[Anomaly Detection Model Training (Autoencoder) on Normal Data];
-    F_Forecasting --> G_Forecasting(Forecasting Evaluation: MSE, MAE, RMSE);
-    F_AD --> G_AD(Anomaly Detection Evaluation: Precision, Recall, F1, AUC, Threshold Analysis);
-    G_Forecasting --> H(Insights & Reporting);
-    G_AD --> H;
-```
-*Figure 1: Project Flowchart*
-`![Project Flowchart](images/project_flowchart.png)`
+The project workflow can be summarized as follows:
+
+1.  **Raw Single-Day Data (.csv)**
+    *   Input: `FullDayWithAlarms.csv`
+    *   Description: Transactional data aggregated per minute for a single day.
+    *   ⬇️
+2.  **Initial EDA & Preprocessing**
+    *   Tasks: Data cleaning, type conversion (e.g., `data_ora` to datetime), understanding initial feature distributions, dropping constant columns.
+    *   Output: Cleaned single-day DataFrame.
+    *   ⬇️
+3.  **Data Augmentation**
+    *   Method: Generate 6 synthetic days based on minute-by-minute statistics from the original day. Inject controlled anomalies (spikes/drops in `numero_transazioni`).
+    *   Output: `week_dataset.csv` (7 days of data, including original day + 6 synthetic days with anomalies).
+    *   ⬇️
+4.  **Feature Engineering**
+    *   Tasks: Extract time-based features (e.g., `hour`, `day_of_week`) from the datetime index.
+    *   Output: Enriched DataFrame.
+    *   ⬇️
+5.  **Data Splitting (Chronological)**
+    *   Method: Split the 7-day dataset into Training (5 days), Validation (1 day), and Test (1 day) sets.
+    *   Output: `train_data`, `val_data`, `test_data` DataFrames.
+    *   ⬇️
+    *   **Path A: Forecasting**
+        1.  **Forecasting Models Training (LSTM, TCN)**
+            *   Input: Scaled sequences from *normal* training data.
+            *   Objective: Predict `numero_transazioni` and `numero_transazioni_errate`.
+            *   ⬇️
+        2.  **Forecasting Evaluation**
+            *   Metrics: MSE, MAE, RMSE on the test set.
+            *   ⬇️
+    *   **Path B: Anomaly Detection**
+        1.  **Anomaly Detection Model Training (Autoencoder)**
+            *   Input: Scaled sequences from *normal* training data.
+            *   Objective: Learn to reconstruct normal patterns.
+            *   ⬇️
+        2.  **Anomaly Detection Evaluation**
+            *   Method: Calculate reconstruction error on test set; use an optimized threshold (from validation set) to classify anomalies.
+            *   Metrics: Precision, Recall, F1-Score, AUC-ROC, AUC-PR.
+            *   ⬇️
+6.  **Insights & Reporting**
+    *   Tasks: Consolidate results, compare model performances, draw conclusions, identify limitations, and suggest future work.
 
 ### Dataset Description
 
