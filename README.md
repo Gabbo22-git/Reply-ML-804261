@@ -47,7 +47,7 @@
 
 ## [Section 1] Introduction
 
-This project focuses on developing and evaluating an anomaly detection system for time-series data representing transactional metrics of a service or application. The core objective is to identify unusual patterns or deviations from normal operational behavior, which could signify performance issues, errors, or other critical incidents. The input data, initially a single day's worth of minute-by-minute aggregated transactions, is augmented to create a more robust dataset for model training and evaluation.
+This project focuses on developing and evaluating an anomaly detection system for time-series data representing transactional metrics of a betting service. The core objective is to identify unusual patterns or deviations from normal operational behavior, which could signify performance issues, errors, or other critical incidents. The input data, initially a single day's worth of minute-by-minute aggregated transactions, is augmented to create a more robust dataset for model training and evaluation.
 
 We explore a two-pronged approach:
 1.  **Time Series Forecasting:** Using Long Short-Term Memory (LSTM) networks and Temporal Convolutional Networks (TCN) to predict key transactional metrics. While primarily for forecasting, the reconstruction/prediction errors from such models can also be indicative of anomalies.
@@ -169,14 +169,14 @@ The distributions of the augmented data were compared to the original day's data
 These plots confirmed that the augmentation process, while adding more data points and variability (especially for `numero_retry` and `tempo_medio` which have more sparse extreme values in the original day), generally preserved the shape and scale of the original distributions.
 
 ### Data Preprocessing
-The following preprocessing steps were applied to the `week_dataset.csv` within the `load_and_preprocess_data` function (from `utils.py`, called in `prepare_data.py`):
+The following preprocessing steps were applied to the `week_dataset.csv` within the `load_and_preprocess_data` function (from `utils` cell, called in `prepare_data` cell):
 1.  **Datetime Conversion:** The `data_ora` column was converted to `datetime` objects and set as the DataFrame index. This is crucial for time-series analysis.
 2.  **Feature Selection (Initial):**
     *   The `tempo_min` and `tempo_max` columns were dropped after the augmentation process, as `tempo_medio` was deemed more representative for per-minute analysis, and the min/max values were primarily used to ensure `tempo_medio` stayed within realistic bounds during synthetic data generation.
     *   The final features used for modeling are: `numero_transazioni`, `tempo_medio`, `numero_retry`, and `numero_transazioni_errate`.
 
 ### Feature Engineering and Selection
-1.  **Time-based Features:** In `prepare_data.py`, the following time-based features were engineered from the `data_ora` index:
+1.  **Time-based Features:** In `prepare_data` cell, the following time-based features were engineered from the `data_ora` index:
     *   `hour`: The hour of the day.
     *   `day_of_week`: The day of the week (0=Monday, 6=Sunday).
     These features were added to potentially help models capture daily and weekly seasonality, although the primary models (LSTM, TCN, Autoencoder) are designed to learn temporal patterns directly from sequences of the core transactional features.
@@ -204,7 +204,7 @@ The motivation for forecasting was twofold: first, as a standard time-series tas
 
 1.  **LSTM (Long Short-Term Memory Network):**
     *   **Description:** LSTMs are a type of Recurrent Neural Network (RNN) well-suited for learning long-range dependencies in sequential data. They use gating mechanisms (input, forget, output gates) to control the flow of information, mitigating the vanishing gradient problem common in simple RNNs.
-    *   **Architecture (from `train_forecasting.py`):**
+    *   **Architecture:**
         *   Input Layer: Sequences of shape (`SEQUENCE_LENGTH`, `num_features`). `SEQUENCE_LENGTH` is 60 (minutes).
         *   Two Bidirectional LSTM layers:
             *   1st BiLSTM: 64 units, `return_sequences=True`, dropout (0.3).
@@ -228,7 +228,7 @@ The motivation for forecasting was twofold: first, as a standard time-series tas
 
 2.  **TCN (Temporal Convolutional Network):**
     *   **Description:** TCNs use causal convolutions (output at time `t` depends only on inputs at time `t` and earlier) and dilated convolutions to achieve large receptive fields with fewer layers compared to standard CNNs. They often train faster and perform competitively with RNNs on sequence modeling tasks.
-    *   **Architecture (from `train_forecasting.py`):**
+    *   **Architecture:**
         *   Input Layer: Sequences of shape (`SEQUENCE_LENGTH`, `num_features`).
         *   Initial Conv1D layer (64 filters, kernel size 4, causal padding).
         *   Batch Normalization.
@@ -250,7 +250,7 @@ The motivation for forecasting was twofold: first, as a standard time-series tas
 #### Anomaly Detection Model (Autoencoder)
 An LSTM-based Autoencoder was chosen as the primary model for anomaly detection.
 *   **Description:** Autoencoders are neural networks trained to reconstruct their input. For anomaly detection, they are trained exclusively on "normal" data. The idea is that the model will learn to reconstruct normal patterns well (low reconstruction error), but will struggle to reconstruct anomalous patterns (high reconstruction error).
-*   **Architecture (from `train_anomaly_detection.py`):**
+*   **Architecture:**
     *   **Encoder:**
         *   Input Layer: Sequences of shape (`SEQUENCE_LENGTH`, `num_features`).
         *   Bidirectional LSTM (128 units, `return_sequences=True`, dropout 0.2).
@@ -280,9 +280,9 @@ An LSTM-based Autoencoder was chosen as the primary model for anomaly detection.
 
 #### Data Splitting
 The augmented `week_dataset.csv` (7 days of data) was split chronologically:
-*   **Training Set:** First 5 days (from `TRAIN_SIZE` in `config.py`).
-*   **Validation Set:** Next 1 day (from `VAL_SIZE` in `config.py`).
-*   **Test Set:** Last 1 day (from `TEST_SIZE` in `config.py`).
+*   **Training Set:** First 5 days (from `TRAIN_SIZE` in `config` cell).
+*   **Validation Set:** Next 1 day (from `VAL_SIZE` in `config` cell).
+*   **Test Set:** Last 1 day (from `TEST_SIZE` in `config` cell).
 
 **Why chronological split?** For time-series data, it's crucial to validate and test on data that occurs after the training data to simulate a real-world scenario where the model predicts future, unseen data. Random splitting would lead to data leakage and overly optimistic performance estimates.
 
@@ -352,7 +352,7 @@ To ensure reproducibility, the environment can be recreated using `conda` or `pi
 ### Step-by-Step Usage Guide
 1.  **Clone the Repository:**
     ```bash
-    git clone [URL_OF_YOUR_REPOSITORY]
+    git clone [https://github.com/Gabbo22-git/Reply-ML-804261]
     cd [REPOSITORY_NAME]
     ```
 2.  **Set up Environment:** Follow the instructions in the [Development Environment and Reproducibility](#development-environment-and-reproducibility) section.
@@ -482,8 +482,8 @@ The augmentation was crucial. Without it, training robust models, especially an 
     *   **Limitations:** The current recall suggests that many injected anomalies are too subtle for the autoencoder to distinguish with high reconstruction error at the chosen threshold, or that the "normal" data itself has a wide range of variability that makes some anomalies look similar to normal extremes.
 
 ### Code Insights
-*   **Modular Structure:** The Python code is organized into scripts (`prepare_data.py`, `train_forecasting.py`, `train_anomaly_detection.py`, `evaluate_models.py`) and utility/configuration files (`utils.py`, `config.py`). This promotes modularity and reusability.
-*   **Data Augmentation Logic:** The `synth_day` function in `main.ipynb` (and presumably moved to `utils.py` or similar for the scripts) is a key component, allowing for the creation of a richer dataset. The strategy of using minute-by-minute statistics from a real day to generate new days with controlled noise and anomaly injection is a practical approach for limited initial data.
+*   **Modular Structure:** The Python code is organized into a notebook with many cells (`prepare_data`, `train_forecasting`, `train_anomaly_detection`, `evaluate_models`) and utility/configuration cells (`utils`, `config`). This promotes modularity and reusability.
+*   **Data Augmentation Logic:** The `synth_day` function in `main.ipynb` is a key component, allowing for the creation of a richer dataset. The strategy of using minute-by-minute statistics from a real day to generate new days with controlled noise and anomaly injection is a practical approach for limited initial data.
 *   **Model Architectures:**
     *   **Forecasting (LSTM/TCN):** Both models use common best practices like Bidirectional LSTMs (for LSTM), causal/dilated convolutions (for TCN), Batch Normalization for stability, and Dropout for regularization. Huber loss was chosen for robustness to outliers in time series.
     *   **Autoencoder:** The architecture is a stacked Bidirectional LSTM encoder-decoder, designed to capture complex temporal patterns. Training it only on normal data is standard practice for this type of anomaly detection.
@@ -492,7 +492,7 @@ The augmentation was crucial. Without it, training robust models, especially an 
     *   Use of `tf.data.Dataset` for efficient data loading pipeline in TensorFlow.
     *   Comprehensive callbacks (`EarlyStopping`, `ModelCheckpoint`, `ReduceLROnPlateau`) are used to manage training effectively.
     *   The threshold optimization for the Autoencoder based on validation set F1-score is a data-driven approach to improve classification performance.
-*   **Configuration Management:** `config.py` centralizes parameters, making it easy to experiment with different settings (sequence lengths, model hyperparameters, file paths).
+*   **Configuration Management:** `config` cell centralizes parameters, making it easy to experiment with different settings (sequence lengths, model hyperparameters, file paths).
 *   **Reproducibility:** Saving scalers (`.joblib`) and models (`.keras`) allows for consistent preprocessing and model reuse.
 *   **Challenges Addressed in Code:**
     *   Handling limited initial data via augmentation.
